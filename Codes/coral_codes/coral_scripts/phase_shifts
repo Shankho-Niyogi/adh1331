@@ -1,0 +1,220 @@
+
+000
+
+P        000
+P'P'ab   180 - 90 - 90
+PKKSab   180 - 90 - 90
+PKPbc    000
+PKPdf    000
+PKiKP    000
+Pb       000
+PcP      000
+PcS      000
+Pdiff    000
+Pg       000
+Pn       000
+S        000
+SKKPbc   360
+SKKPdf   360
+SKSac    360
+SKSdf    360
+SKiKP    360
+ScP      000
+ScS      000
+Sdiff    000
+Sb       000
+Sg       000
+Sn       000
+
+090
+phs_90=['P''P''bc  ';'P''P''bc  ';'P''P''bc  ';'P''P''bc  ';...
+'PKKSbc  ';'PKKSdf  ';'PKSab   ';'PP      ';'SKKSac  ';'SKPab   ';'SS      ']
+
+P'P'bc   180 - 90
+P'P'df   180 - 90
+PKKSbc   180 - 90
+PKKSdf   180 - 90
+PKSab    180 - 90
+PP       180 - 90
+S'S'ac   180 - 90
+S'S'df   180 - 90
+SKKSac   180 - 90
+SKKSdf   180 - 90
+SKPab    180 - 90
+SS       180 - 90
+
+
+180
+phs_180=['PKKPab  ';'PKSbc   ';'PKSdf   ';'SKPbc   ';'SKPdf   ']
+PKKPab   000 - 90 - 90
+PKSbc    180
+PKSdf    180
+SKPbc    180
+SKPdf    180
+
+
+270
+phs_270=['PKKPbc  ';'PKKPdf  ';'PKPab   ';'PS      ';'SKKPab  ';'SP      ']
+PKKPbc   000 - 90
+PKKPdf   000 - 90
+PKPab    000 - 90
+PS       000 - 90
+SKKPab   360 - 90
+SP       000 - 90
+
+
+PbPb     PP 
+PgPg     PP 
+PnPn     PP
+PnS      PS
+SPg      SP
+SPn      SP
+SbSb     SS
+SgSg     SS
+SnSn     SS
+
+
+
+
+
+
+
+
+P        000
+P'P'ab   180 - 90 - 90
+P'P'bc   180 - 90
+P'P'df   180 - 90
+PKKPab   000 - 90 - 90
+PKKPbc   000 - 90
+PKKPdf   000 - 90
+PKKSab   180 - 90 - 90
+PKKSbc   180 - 90
+PKKSdf   180 - 90
+PKPab    000 - 90
+PKPbc    000
+PKPdf    000
+PKSab    180 - 90
+PKSbc    180
+PKSdf    180
+PKiKP    000
+PP       180 - 90
+PS       000 - 90
+Pb       000
+PbPb     PP 
+PcP      000
+PcS      000
+Pdiff    000
+Pg       P  
+PgPg     PP 
+Pn       P
+PnPn     PP
+PnS      PS
+S        000
+S'S'ac   180 - 90
+S'S'df   180 - 90
+SKKPab   360 - 90
+SKKPbc   360
+SKKPdf   360
+SKKSac   180 - 90
+SKKSdf   180 - 90
+SKPab    180 - 90
+SKPbc    180
+SKPdf    180
+SKSac    360
+SKSdf    360
+SKiKP    360
+SP       000 - 90
+SPg      SP
+SPn      SP
+SS       180 - 90
+Sb       S
+SbSb     SS
+ScP      000
+ScS      000
+Sdiff    000
+Sg       S
+SgSg     SS
+Sn       S
+SnSn     SS
+
+
+
+
+
+
+
+
+pP       
+pP'P'ab  
+pP'P'bc  
+pP'P'df  
+pPKPab   
+pPKPbc   
+pPKPdf   
+pPKiKP   
+pPP      
+pPb      
+pPbPb    
+pPdiff   
+pPn      
+pPnPn    
+pS       
+pSKSac   
+pSKSdf   
+pSdiff   
+sP       
+sP'P'ab  
+sP'P'bc  
+sP'P'df  
+sPKPab   
+sPKPbc   
+sPKPdf   
+sPKiKP   
+sPP      
+sPb      
+sPbPb    
+sPdiff   
+sPg      
+sPgPg    
+sPn      
+sPnPn    
+sS       
+sSKSac   
+sSKSdf   
+sSb      
+sScS     
+sSdiff   
+sSn      
+
+%  phs_180=['SKPac   ';'SKPdf   ';'
+
+%  idx=find(strcmp2(phase_name(1:2,:)','PP'));
+%  if length(idx)>0, phase(idx)=phase(idx)+180+90; end
+
+%  idx=find(strcmp2(phase_name(1:2,:)','SS'));
+%  if length(idx)>0, phase(idx)=phase(idx)+180+90; end
+
+%  idx=find(strcmp2(phase_name(1:2,:)','PS'));
+%  if length(idx)>0, phase(idx)=phase(idx)+000+90; end
+
+%  idx=find(strcmp2(phase_name(1:2,:)','SP'));
+%  if length(idx)>0, phase(idx)=phase(idx)+000+90; end
+
+%  idx=find(strcmp2(phase_name(1:3,:)','SKP'));
+%  if length(idx)>0, phase(idx)=phase(idx)+180; end
+
+%  idx=find(strcmp2(phase_name(1:3,:)','PKS'));
+%  if length(idx)>0, phase(idx)=phase(idx)+180; end
+
+%  idx=find(strcmp2(phase_name(1:4,:)','SKKS'));
+%  if length(idx)>0, phase(idx)=phase(idx)+180+90; end
+
+%  idx=find(strcmp2(phase_name(1:4,:)','PKKP'));
+%  if length(idx)>0, phase(idx)=phase(idx)+180+90; end
+
+%  idx=find(strcmp2(phase_name(1:5,:)','PKPab'));
+%  if length(idx)>0, phase(idx)=phase(idx)+90; end
+
+%  idx=find(strcmp2(phase_name(1:6,:)','PKKPab'));
+%  if length(idx)>0, phase(idx)=phase(idx)+90; end
+ 

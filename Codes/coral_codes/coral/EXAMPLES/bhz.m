@@ -1,0 +1,17 @@
+new_opt=[                     
+'read bhz     '
+'sort delta   '
+'tt P         '
+'phas P       '
+'widt -30 60  '
+'cut 0        '
+'deme         '
+'inte         '
+'xwin 0 4 1   '
+'plot 1       '
+'deme         '
+'tape .15     '
+'copy 1 2     '
+'deco i .00001'
+'plot 1       '
+];                            

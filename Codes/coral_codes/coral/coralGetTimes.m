@@ -1,0 +1,117 @@
+function  [recStartTime, recStartSampleI, recEndSampleI, recStartSampleErr, recStartTimeDiff, recEndTimeDiff] ...
+ = coralGetTimes(D, refTimeInd);
+%   coralGetTimes    get start times and end times of seismograms in coral structure
+% USAGE: [recStartTime, recStartSampleI, recEndSampleI, recStartSampleErr, recStartTimeDiff, recEndTimeDiff] ...
+%  = coralGetTimes(D, refTimeInd);
+%
+% See coral for explanation of data structure (D)
+%
+% refTimeInd is used to determine a reference time and sample interval
+%             optional (default=0)
+%   0         reference time is earliest data start time 
+%   i or [i,j]  index into D (which can be a matrix or vector)
+%             to set the reference time to the start time for that seismogram
+%   2 or 6 element column vector containing an absolute time
+%             
+% Output:  (all but the first have the same dimensions as D)
+%    recStartTime       Absolute start times of each seismogram (6xN)
+%    recStartSampleI    Offset of each seismogram start in samples relative to reference time
+%    recEndSampleI      Offset of each seismogram end in samples relative to reference time
+%    recStartSampleErr  Error (s) in start times relative to integer number of sample intervals
+%    recStartTimeDiff   Offset of each seismogram start in seconds relative to reference time
+%    recEndTimeDiff     Offset of each seismogram end in seconds relative to reference time
+%
+%  Note that end times correspond to the time of the last sample plus one sample, i.e. they correspond to
+%  the start time of a seismogram that could be merged with it.
+%
+%  required data fields: recStartTime, recSampInt, recNumData
+%
+% K. Creager  kcc@ess.washington.edu   10/28/2005
+%
+% 
+  
+[N,M]=size(D);       % dimensions of data array
+ierr  = zeros(N,M);
+
+recSampInt       = [D.recSampInt];              % sample intervals  
+sampIntDiff = 1 - min(recSampInt)/max(recSampInt);
+if sampIntDiff > 1e-6; 
+  recSampInt
+  disp(sprintf(' ERROR in coralGetTimes fractional difference in sample intervals is: %.8f',sampIntDiff))
+  keyboard
+end
+
+ 
+refTimeOK =0;        % assume it is not an acceptable value unless proven otherwise
+if nargin==1;
+  refTimeInd=0;
+end
+ 
+if length(refTimeInd)==1; 
+  if rem(refTimeInd,1)==0  &  refTimeInd>=0 & refTimeInd<=N*M; % refTimeInd must be an integer between 0 and N*M
+    refTimeOK=1;
+  end
+elseif length(refTimeInd)==2;
+  if rem(refTimeInd(:),1)==[0;0]  &  all(refTimeInd(:)<=[N;M]) & all(refTimeInd(:)>=[1;1]);  % refTimeInd must be 2 integers between 1,1 and N,M
+    refTimeOK=2;
+  elseif refTimeInd(1)>1900 & size(refTimeInd(1))==2;  % refTime is a column vector containing date/time, reformat it to 6x1 format
+    refTimeInd=time_reformat(refTimeInd);
+    refTimeOK=6;
+  end
+elseif size(refTimeInd,1)==6 & size(refTimeInd,2)==1;  % refTimeInd is a reference time [YY,MM,DD,HH,MM,SS.SSSS]'
+  refTimeOK=6;
+end
+ 
+ 
+if refTimeOK==0;
+  disp('coralGetTime ERROR: refTime can not be interpreted'); 
+  ierr=0;
+  return
+
+elseif refTimeOK == 6;                % refTimeInd is a start time, use it and take median sample interval
+  refTime    = refTimeInd;
+  refSampInt = median(recSampInt);
+elseif refTimeOK==2;      % refTimeInd is the index into a 2-D data array, get start time and sample interval for that seismogram
+  ind1=refTimeInd(1); ind2=refTimeInd(2);
+  refTime    = D(ind1,ind2).recStartTime;
+  refSampInt = D(ind1,ind2).recSampInt;
+elseif refTimeOK==1;      
+  if refTimeInd>0;       % refTimeInd is the index into the data array, get start time and sample interval for that seismogram
+    ind=refTimeInd;
+    refTime    = D(ind).recStartTime;
+    refSampInt = D(ind).recSampInt;
+  else                   % refTimeInd equals 0, get the earliest start time and sample interval from that seismogram
+    [tmp,ind] = min( timediff([D.recStartTime]) ); % get index to seismogram with the earliest start time
+    refTime    = D(ind).recStartTime;
+    refSampInt = D(ind).recSampInt;
+  end
+end
+
+ 
+recStartTime       = [D.recStartTime];                       % all record start times
+recStartTimeDiff   = timediff([refTime , recStartTime]);     % record start times minus reference time (s)
+recStartTimeDiff(1)= [];                                     % remove meaningless first time
+recSampInt         = [D.recSampInt];                         % sample intervals
+recDuration        = [D.recNumData].*recSampInt;             % duration (s)
+recEndTime         = timeadd(recStartTime,recDuration);      % end time of each seismogram
+recEndTimeDiff     = recStartTimeDiff + recDuration;         % record end times minus reference time (s)
+
+recStartSample     = recStartTimeDiff/refSampInt;            % sample number (real) at start of each record (starting at 0) for each seismogram
+recStartSampleI    = round(recStartSample);                  % sample number (integer) at start of each record (starting at 0) for each seismogram
+recStartSampleErr  = (recStartSample-recStartSampleI)*refSampInt;  % error (s) for integer sample start times for each seismogram
+
+recEndSample       = recEndTimeDiff/refSampInt;              % sample number (real) at end of each record for each seismogram
+recEndSampleI      = round(recEndSample);                    % sample number (integer) at end of each record for each seismogram
+recEndSampleErr    = (recEndSample-recEndSampleI)*refSampInt;% error (s) for integer sample end times for each seismogram
+
+%  resahpe everyghing to match the dimensions of  D
+recStartTimeDiff = reshape(recStartTimeDiff,N,M);
+recEndTimeDiff   = reshape(recEndTimeDiff,N,M);
+recSampInt       = reshape(recSampInt,N,M);
+recDuration      = reshape(recDuration,N,M);
+recEndTimeDiff   = reshape(recEndTimeDiff,N,M);
+recStartSampleI  = reshape(recStartSampleI,N,M);
+recEndSampleI    = reshape(recEndSampleI,N,M);
+recStartSampleErr= reshape(recStartSampleErr,N,M); 
+ 
+     

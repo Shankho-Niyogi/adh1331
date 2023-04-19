@@ -1,0 +1,66 @@
+SORT BY COLUMN OR DELETE BY COLUMN:
+input:         name of field to sort or delete
+Get field  :  [field, out_mat, dtyp] = Get('Station_Names', 'D0'); 
+or         :  [ds, out_mat, dtyp] = Get('Gain', 'D0'); 
+           :  [a0, out_mat, dtyp] = Get('Normalization', 'D0'); 
+Compare field with list of station names to delete, or sort field by
+values in 'field' to obtain sort_index.
+eg         :   sort_idx=find_bynames(out_vec,'[ANMO,COL,LON]','//');
+or         :   [temp,sort_idx]=sort(field);
+or         :   sort_idx=find(~[a0 & ds]);
+sort the view, replacing old view
+ExecCmd { [everything]=sort(everything,'D0',[],'D0',remove_idx);  }
+
+CUT:
+window width      |   from user stored in global array
+phase name(s)     |
+phase_velocity    |
+surface wave circuit number |
+
+delta             |   get from view
+depth             | 
+tstart            |
+tend              |
+sample_interval   |
+channel names     |
+data              |
+
+calculate travel times, ray parameters, dtdh, dddp, phase_name
+for an array of phase names and distances and desired time windows. 
+
+construct time windows from travel times and window_width vector in terms
+of times relative to reference times.  
+
+apply time windows by construting new window pointer arrays and resetting
+the start time of the new windows.
+
+Put travel times, ray parameters, dtdh, dddp, and new data window limits 
+back into view.
+
+[Phase_Name1, Syn_Travel_Time1, Syn_Ray_Parameter1, Syn_DDDh1, Syn_DDDp1,  ...
+Syn_Data_Win1]=cut(Delta,Depth,Tstart,Tend,Sample_intr,Channel_names,Data,Expr]
+
+TT:
+input: Use Get to obtain Delta, Depth
+       Use globals to get desired phase names
+
+calcualte: Use get_ttt to get travel times
+
+output: add travel times to view with names like TT_P, TT_PKPab, ...
+
+FILTERS:
+input       : Data_win1(Start_Idx,End_Idx,Data_vec), Start_time, Sample_interval, 
+              Instrument_Response
+filter name : demean, taper(2 flags), hilbert, envelope, butter, cosine, deconvolve, ...
+output      : Data_win1(Start_Idx,End_Idx,Data_vec), Start_time, Sample_interval
+flags       : taper type and % of time series; hilbert amount of phase shift;
+              butter high/low pass corner, # of poles; cosine 4 f arguments;
+              deconvolve needs instrument response info for old response and for new
+              response.
+XCOR:
+input       : Data
+xcorr data to get time lags
+cut windows accordingly
+output new windows and calculated time lags.
+
+output      : 

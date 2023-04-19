@@ -1,0 +1,53 @@
+function [data, ierr] = coralDemean(data,opt);
+%   coralRotate    rotate seismograms in coral structure
+% USAGE: [data, ierr] = coralDemean(data,opt);
+%
+% if opt.angle exists then rotate the data by opt.angle degrees clockwise.  
+% See coral for explanation of data structure
+%      = 0 if no errors
+%      = 1 if no data has something other than 2 seismograms
+%      = 2 the angle is not entered in opt
+%      = 3 the component dip is not 90
+%      = 4 the azimuth of the horizontals disagree by more than 90 degrees
+%
+%  required fields: data, recAzimuth, recDip
+%
+% K. Creager  kcc@ess.washington.edu   5/27/2005
+
+ierr=0;
+ndata = length(data);
+if ndata ~= 2;              % must be exactly 2 seismograms
+  ierr = 1
+else
+  if ~isfield(opt,'angle') % must enter an angle
+    ierr=2;  
+  else
+    xi = opt.angle;
+    recAzimuth = [data.recAzimuth];
+    recDip     = [data.recDip];
+    if ~all(recDip==90);   % dip must be 90
+      ierr=3 
+    else
+      diffAzimuth = recAzimuth(2) - recAzimuth(1); 
+      diffAzimuth = diffAzimuth + 360*(diffAzimuth<0);  % force diffAsimuth to be > 0.
+      if diffAzimuth == 270; % they are ordered as E N, all is well
+      elseif diffAzimuth == 90; % data are ordered as N E, change order
+        if size(data,1)==1; ind =[2,1]; else; ind=[2,1]'; end
+        data=data(ind);
+      else
+        ierr=4;
+      end
+      % SHOULD CHECK THAT SEISMOGRAMS HAVE SAME START TIME AND DURATION AND GAIN.
+      e=data(1).data;  %Data(ds1:ds1-1+nd,1)/Calib(2,1);
+      n=data(2).data;  %Data(ds2:ds2-1+nd,2)/Calib(2,2);  
+
+      xi=xi*pi/180;
+      data(1).data=(-sin(xi)*n +cos(xi)*e);   newAzim = data(1).recAzimuth + xi*180/pi; data(1).recAzimuth 
+      data(2).data=(+cos(xi)*n +sin(xi)*e);   data(2).recAzimuth = data(2).recAzimuth + xi*180/pi;
+    end
+  end
+end
+
+
+
+

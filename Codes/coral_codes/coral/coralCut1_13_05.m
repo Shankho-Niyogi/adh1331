@@ -1,0 +1,337 @@
+function [data, ierr, options, dataMat] = coralCut(data, options, header);
+%   coralCut      cut data from seismograms
+% Usage: [data, ierr, options, dataMat] = coralCut(data, options);
+%
+%INPUT PARAMETERS:
+% see CORALHOME/coral.doc for explanation of new data structure
+% and CORALHOME/coral/coral.man for explanation of old data and header format
+% options must be a structure
+% the structure must contain the field 'cutType'
+% cut type must equal one of: 'phase', 'phaseVelocity' or 'absTime'
+% if 'phase' then cut data around the predicted time of a phase
+%     required field:
+%        phase which must be a character string
+%              containing phase name 'P'or 'PKPdf' or'ScS'
+%        window which must be a 1 by 2 array containing the time window with respect to
+%              the desired phase in seconds
+% if 'phaseVelocity' then cut data around a phaseVelocity 
+%     required fields:
+%        phaseVelocity which is a scalar (km/s) or a 2 element array containing 
+%                      phaseVelocity (km/s) and offset time(s)
+%        window (same as above)
+% if 'absTime' then cut data with respect to an array of absolute times (Y M D H M S)
+%     required fields:
+%        absStartTime which is a 6xN array of desired start times, one for each seismogram
+%        absEndTime   which is a 6xN array of desired end times, one for each seismogram
+% options can contain the optional field 'pad' taking on values of:
+%     'false'   (default) do not pad the data, return the intersection of the requested data and the existing data
+%     'zero'    zero pad the data on both sides as needed to fill the requested time windows
+%     'NaN'     pad data with NaN on both sides as needed to fill the requested time windows
+%               using the latter two options, data with commons sample intervals should have the same number of samples.
+%
+%OUTPUT parameters:
+% data          see coral
+% ierr        = vector indicating which data were properly cut
+%             = 0 cutting is OK
+%             = 3 if errors in input parameters
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Data can be passed in using two very different formats, determine which is being used based 
+% on the class of the data, then determine how many seismograms there are (ndata) and the 
+% sample intervals for each (sintr) in seconds.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+header_class = class(data);
+switch header_class
+  
+  case 'struct';  % data is a structure; use methods for new data format
+  
+    if nargin~=2;
+      disp('error: ''coralCut'' requires 2 arguments')
+      ierr = 3;
+      return
+    end
+    ndata = length(data);
+    sintr = [data.recSampInt]';
+   
+  case 'double';  % data is a double; use methods for old data format
+
+    if nargin~=3;
+      disp('error: ''coralCut'' requires 3 arguments')
+      ierr = 3;
+      return
+    end
+    ndata = size(header,2);
+    sintr = header(6,:)'; 
+
+  otherwise
+  
+    disp('Error in ''coralCut'': data must be a structure or double array')
+    ierr=3;
+    return
+  
+end
+
+ierr  = zeros(ndata,1);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% second input argument must be a structure
+% check that this structure defines a method for cutting the data
+% if not, return with ierr=3
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+% second input argument must be a structure
+if ~strcmp(class(options),'struct');  
+  disp('Error in ''coralCut'': second input argument must be a structure')
+  ierr=3;
+  return
+end
+
+% second input argument must contain the field named cutType
+if ~any( strcmp('cutType',fieldnames(options))) % Does 'options' contain the field 'cutType'?
+  disp('Error in ''coralCut'': second input argument must be a structure containing the field ''cutType'' ')
+  ierr=3;
+  return
+end
+
+% options.cutType must be one of:  'phase' , 'phaseVelocity' or  'absTime'
+types = {'phase' , 'phaseVelocity' , 'absTime'};
+cutType = options.cutType;
+ierr_tmp=0;
+if strcmp(class(cutType),'char'); 
+  tmp = strcmp(types , cutType);
+  if any(tmp)==0;
+    ierr_tmp=1;
+  end
+end
+if ierr_tmp==1;
+  disp('Error in ''coralCut'': ''options.cutType'' must be a character string containing one of ''phase'', ''phaseVelocity'', or ''absTime''')
+  ierr=3;
+  return
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% check input arguments for each style of phase cutting
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+n_phase=1;
+switch cutType
+  
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  case 'phase'
+    % options.phase must exist and be a character string containing one phase name, or a cell array of strings containing multiple phase names
+    % options.window must exist and be a 2x1 array of numbers
+    % options.model is optional, if it exists it is a character string containing the name of a radial earth model e.g. 'iasp91', 'prem', 'ak135'
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  if ~any(strcmp('phase',fieldnames(options))) % Does 'options' contain the field 'phase'?
+      disp('Error in ''coralCut'': third input argument must be a structure containing the field ''phase'' ')
+      ierr=3;
+      return
+    else
+      phase   = options.phase;
+      n_phase = length(phase);
+      if ~any(strcmp(class(phase),{'cell' , 'char'}))
+        disp('Error in ''coralCut'': options.phase must be a character string or a cell array of character strings')
+        ierr=3;
+        return
+      end
+    end
+    
+    ierr_tmp=1;
+    if any(strcmp('window',fieldnames(options))) % Does 'options' contain the field 'window'?
+      window=options.window;
+      if strcmp(class(window),'double')
+        if length(window)==2;
+          ierr_tmp=0;
+        end
+      end
+    end
+    if ierr_tmp==1;
+      disp('Error in ''coralCut'': options.window must be a 2x1 array')
+      ierr=3;
+      return
+    end
+    
+    if any(strcmp('model',fieldnames(options))) % Does 'options' contain the field 'model'?
+      model = options.model;
+    else
+      model = 'iasp91';  % default value
+    end
+
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  case 'phaseVelocity'
+    % options.phaseVelocity must exist and be a 1 or two element vector of numbers containing the phaseVelocity (km/s) and optionally an offset (s).
+    % options.window must exist and be a 2x1 array of numbers
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  
+    ierr_tmp=1;
+    if any(strcmp('phaseVelocity',fieldnames(options))) % Does 'options' contain the field 'phaseVelocity'?
+      phaseVelocity=options.phaseVelocity;
+      n_phase      =1;
+      if strcmp(class(window),'double')
+        phaseVelocity = phaseVelocity(:);
+        if length(phaseVelocity)==2;
+          tOffset      = phaseVelocity(2);
+          phaseVelocity= phaseVelocity(1);
+          ierr_tmp     = 0;
+        elseif length(phaseVelocity)==1;
+          tOffset      = 0;
+          ierr_tmp     = 0;
+        end
+      end
+    end
+    if ierr_tmp==1;
+      disp('Error in ''coralCut'': options.phaseVelocity must be a scalar or 2-element vector')
+      ierr=3;
+      return
+    end
+
+    ierr_tmp=1;
+    if any(strcmp('window',fieldnames(options))) % Does 'options' contain the field 'window'?
+      window=options.window;
+      if strcmp(class(window),'double')
+        if length(window)==2;
+          ierr_tmp=0;
+        end
+      end
+    end
+    if ierr_tmp==1;
+      disp('Error in ''coralCut'': options.window must be a 2x1 array')
+      ierr=3;
+      return
+    end
+    
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  case 'absTime'
+    % options.absStartTime and options.absEndTime must exist and be 6xN arrays.
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    
+    ierr_tmp1=1;
+    if any(strcmp('absStartTime',fieldnames(options))) % Does 'options' contain the field 'absStartTime'?
+      absStartTime=options.absStartTime;
+      if strcmp(class(absStartTime),'double')
+        [nAbsStartTime,mAbsStartTime]=size(absStartTime);
+        if nAbsStartTime==6 & mAbsStartTime ==ndata;
+          ierr_tmp1=0;
+        end
+      end
+    end
+    ierr_tmp2=1;
+    if any(strcmp('absEndTime',fieldnames(options))) % Does 'options' contain the field 'absEndTime'?
+      absEndTime=options.absEndTime;
+      if strcmp(class(absEndTime),'double')
+        [nAbsEndTime,mAbsEndTime]=size(absEndTime);
+        if nAbsEndTime==6 & mAbsEndTime ==ndata;
+          ierr_tmp2=0;
+        end
+      end
+    end
+    if ierr_tmp1==1 | ierr_tmp2==1;
+      disp('Error in ''coralCut'': options.absStartTime and options.absEndTime must be 6xNdata arrays')
+      return
+    end    
+    
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Finished checking options
+% now cut the data
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+timmat = zeros(ndata,n_phase); pmat=timmat; dddpmat=pmat; dtdhmat=pmat;
+
+switch header_class
+  
+  case 'struct';  % header is a structure; use methods for new data format
+    
+    if isfield(data,'eqLat') & isfield(data,'eqLon')  ...
+        & isfield(data,'staLat') & isfield(data,'staLon') & isfield(data,'eqDepth')
+      [eqDist,eqStaAzim, staEqAzim]  = delaz([data.eqLat]',[data.eqLon]',[data.staLat]',[data.staLon]',0);
+      eqDepth = [data.eqDepth]';
+    else
+      ierr = 4;
+      disp('Error in ''coralCut'': data must contain fields eqLat, eqLon, staLat, staLon, and eqDepth')
+      return
+    end
+    
+    switch cutType
+      
+      case 'phase'
+
+        timmat = zeros(ndata,n_phase); pmat=timmat; dddpmat=pmat; dtdhmat=pmat;
+        if max(abs(eqDepth-eqDepth(1)))<0.1;    % all events are at the same depth, call get_ttt once
+          [timmat,pmat,dddpmat,dtdhmat] = get_ttt(phase,eqDepth(1),eqDist(:)', model);
+        else;                                   % events at different depths, call get_ttt many times
+          for k=1:ndata; 
+            [timmat(k,:),pmat(k,:),dddpmat(k,:),dtdhmat(k,:)] = get_ttt(phase,eqDepth(k),eqDist(:)',model);
+          end
+        end
+
+      case 'phaseVelocity'
+
+        timmat(:,k) = tOffset + eqDist(:)*111.111/phaseVelocity;
+        
+      case 'absTime'
+        
+    end
+    
+    for iphase = 1:n_phase;
+      
+      switch cutType
+        case { 'phase' 'phaseVelocity'  }
+          tStart = window(1);
+          absStartTime = timeadd(reshape([data.eqOriginTime],6,length(data)) , timmat(:,iphase)' + tStart);
+          tEnd = window(2);
+          absEndTime   = timeadd(reshape([data.eqOriginTime],6,length(data)) , timmat(:,iphase)' + tEnd);
+        case 'absTime'
+          absStartTime = options.absStartTime;
+          absEndTime   = options.absEndTime;
+      end
+      
+      winDuration0    = timediff(absEndTime,absStartTime)';  % duration (s) of desired window
+      winNumSamp0     = round(winDuration0 ./ sintr) + 1;    % number of samples in desired window
+      winNumSamp1     = median(winNumSamp0(find(isfinite(winNumSamp0))));                 % actual number of samples in new window
+      recStartTime    = reshape([data.recStartTime],6,ndata);% actual start time of original data
+      tStartDiff0     = timediff(absStartTime , recStartTime);% desired start time minus actual start time (s)
+      diffIndexStart  = round(tStartDiff0 (:) ./ sintr);     % offset in samples from start of original window to start of desired window
+      diffIndexEnd    = diffIndexStart + winNumSamp1-1;        % offset in samples from start of original window to end of desired window
+      absStartTimeOut = timeadd(recStartTime , diffIndexStart(:)' .* sintr(:)');
+      absEndTimeOut   = timeadd(recStartTime , diffIndexEnd(:)'   .* sintr(:)');
+      
+      indStart0 =     1 + max(diffIndexStart,0); 
+      numData0  =     [data.recNumData];  numData0=numData0(:);
+      indEnd0   =     1 + min(diffIndexEnd,numData0-1); 
+      indStart1 =     1 - min(diffIndexStart,0); 
+      indEnd1   =     1 - min(diffIndexEnd,numData0-1);      
+      
+      dataMat         = zeros(winNumSamp1(1),ndata);
+      for idata=1:ndata;
+        if diffIndexStart(idata) > numData0(idata) | diffIndexEnd(idata) < 1 | ~isfinite(diffIndexStart(idata))
+          % no data match, return NaN
+          data_tmp=[];
+        else
+          if diffIndexStart(idata) >= 0; 
+            istart0 = diffIndexStart(idata) + 1;
+            istart1 = 1;
+          else
+            istart0 = 1;
+            istart1 = 1 - diffIndexStart(idata);
+          end
+          if diffIndexEnd(idata) <= numData0(idata)-1;
+            iend0   = diffIndexEnd(idata) + 1;
+            iend1   = winNumSamp1;
+          else
+            iend0   = numData0(idata);
+            iend1   = winNumSamp1 + numData0(idata)-1 - diffIndexEnd(idata);
+          end
+          data_tmp = data(idata).data(istart0:iend0);
+          dataMat(istart1:iend1,idata) = data_tmp;
+        end
+        data(idata).recNumData=length(data_tmp);
+        data(idata).data = data_tmp;
+        data(idata).recStartTime = absStartTimeOut(:,idata);
+      end
+      winDuration1    = diffIndexEnd - diffIndexStart;
+    end
+end
+

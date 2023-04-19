@@ -1,0 +1,127 @@
+Example of running CORAL on a set of long-period data from a deep-
+focus earthquake.  Type the following instructions.
+
+matlab
+coral
+yaxi E
+orient tall                            
+read lhz.ah
+corr
+rm NWAO CHTO GUMO LZH TATO BJI HIA MAJO
+rm noinstr                             
+phas P                                 
+widt -300 900                          
+cut 0                                  
+sort 1 delta
+deme                                   
+tt P PP PcP PKPdf PKPab                
+tt S SS ScS SKSac SKKS                 
+tt PcS ScP pP sP pPP                   
+tt sPP sS pS sSS pSS                   
+tt SP PS pSP sSP pPS                   
+tt sPS pPKPdf sPKPdf                   
+tt pPKPab sPKPab  PKKP                 
+%                  plot raw data
+plot 1                                 
+tape .05                               
+deco l                                 
+widt -100 800                          
+cut 1                                  
+copy 1 2
+%                  plot deconvolved data
+plot 1                                 
+yaxi D
+scal .3
+%                  plot true-scale record section
+plot 1
+yaxi E
+scal -.1
+xwin .3 20 1
+eval ray_syn
+%                 flip seismograms according to CMT
+plot 1
+eval plot_radiation_bars
+alig 3 0 40
+%                 align on P-wave using x-correlation
+plot 1
+%                 plot times and first motions on focal sphere
+fs 3 1 1
+
+copy 2 1
+xwin .3 1
+phas sPP
+widt -120 240
+cut 1
+eval ray_syn
+%                 plot data aligned on sPP, corrected for 
+%                 hilbert transform and flipped according to CMT
+plot 1
+alig 1 10 45
+%                 align data on peaks and replot
+plot 1
+%                 plot times and first motions on focal sphere
+fs 3 2 2 
+scal .5 
+%                 plot data to true scale
+plot 1
+eval plot_radiation_bars
+
+stop
+
+NOTES:
+read reads in an ah file containing data from several stations
+     from one event, and all the same orientation of motion
+corr reads the Harvard CMT solution for this event
+rm   removes records that are known to have problems
+cut  out time windows from 300 s before to 900s after the 
+     predicted P arrival time from D0 into D1
+sort seismograms by distance in D1
+deme remove the mean of each seismogram
+tt   calculate travel-time curves and store them for display using plot
+yaxi, scal, xwin scales the display of seismograms
+PLOT data in D1
+     plot is the only command that gives interactive graphics.  It only gives 
+     interactive graphics when plotting D1.  After entering the
+     plot command you must put the cursor in the plot window.  Type h for 
+     help, f to flip traces, k to delete (kill) traces, etc.  There is an error
+     in the station header for station KIP.  It should be flipped.  Do this by 
+     typing f then using the fright mouse button to point the the center of the 
+     trace to be flipped.  Type return and the trace should flip. A minus sign
+     in the label indicates that the seismogram has been flipped.  Type return 
+     again to proceed.
+
+tape applies a taper 
+deco deconvolves instrument responses with argument (l) 
+     all seismograms are converted to a LP DWWSSN response.
+cut 1 cuts the data from D1
+copy copies D1 to D2 for safe keeping now that the data are cleaned up.
+plot redisplays deconvolved seismograms
+yaxi and scal are set for a true record section with true-scale amplitudes
+plot 1
+yaxi, scal, xwin are set back for evenly spaced seismograms at relative scales
+     set to a time scale of 20s/cm after plotting on 8.5/11 inch paper
+eval ray_syn corrects amplitudes and polarity for the CMT focal mechanism and
+     geometric spreading, but not for reflection/transmission coefficients.
+     this routine works for many but not all phases.
+plot 1 display should have all P waves with same polarity
+eval plot_radiation_bars displays bars to the right of the seismograms 
+     ineicating the relative strength of the earthquake mechanism.  Nodal
+     rays have small bars.
+alig aligns data based on a specified time window by stacking the data and cross-
+     correlating each trace with the stack.  It is sometimes a good idea to 
+     do this twice because the stack will improve as the data are better aligned.
+     Relative travel time residuals are shown in the label after plotting.
+plot display aligned, flipped data
+fs   plot the observed travel-time residuals, along with the first motions and 
+     predictions for the source mechanism on focal spheres.
+copy 2 1  copy the deconvolved data back to data 1
+cut  out new windows around the predicted time of the phase sPP
+eval ray_syn  flip seismograms, scale by source radiation and geometric 
+     spreading and use Hilbert transforms to account for 90 deg phase shifts.
+plot phase shifted data.
+alig align data on peaks
+plot aligned data
+fs   plot focal spheres of first motions and travel time residuals for sPP
+     radiation pattern is for SV radiation amplitude and sign
+eval plot_radiation_bars plots bars for predicted SV source radiation amplitude 
+     for sPP

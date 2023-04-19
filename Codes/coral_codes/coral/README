@@ -1,0 +1,23 @@
+Changes:
+
+6/30/00 
+
+
+d Delta/ d RayParameter in MATLAB/tau_p/get_tt_subr.f says the units are
+(s/rad^2).  This is incorrect, the units are really (rad^2/s)
+
+This mistake in documentation was also in MATLAB/coral/coral.man
+
+The same mistake in documentation was in coral_scripts/ray_syn_fun.m and
+in addition, this documentation stated that the variable was  
+d RayParameter /d Delta (s/rad^2) and called the variable dpdd, when in
+fact all along it was really d Delta/ d RayParameter (rad^2/s).
+
+The bottom line is that everything has been calculated correctly, but the
+documentation needed fixing.  On 6/30/00 the documentation has been fixed
+in coral.man, get_tt_subr.f and coral_scripts/ray_syn_fun.m However,
+get_tt_subr.f hasn't yet been recompiled, so the documentation you get for
+that routine from matlab is still wrong.
+
+
+

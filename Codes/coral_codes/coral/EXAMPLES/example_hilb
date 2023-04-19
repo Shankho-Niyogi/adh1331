@@ -1,0 +1,48 @@
+%show that sPP is the hilbert transfrom of sP
+coral                          
+read lhz.ah
+rm NWAO CHTO GUMO LZH TATO BJI 
+sort delta                     
+phas P                         
+widt -200 600                  
+cut 0                          
+deme                           
+tape .1                        
+deco l .000001                 
+corr                           
+copy 1 3                       
+phas sP                        
+widt 0 50                    
+cut 1                          
+xwin .3 20 1                   
+tt PP                          
+plot 1                         
+xcor 6                         
+plot 1                         
+fs 3 2 2                       
+copy 1 2                       
+ 
+copy 3 1                       
+phas sPP                       
+cut 1                          
+plot 1                         
+fs 3 2 2                       
+xcor 6                         
+plot 1                         
+copy 1 3                       
+
+tt none
+hilb 0
+hilb 0 
+cat 2 1                        
+yaxi d                         
+plot 1                         
+
+copy 3 1                       
+hilb 0                         
+hilb 0                         
+hilb 0                         
+cat 2 1                        
+xcor 6                         
+plot 1                         
+stop

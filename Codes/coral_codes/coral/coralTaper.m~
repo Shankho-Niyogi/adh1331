@@ -1,0 +1,63 @@
+function [data, ierr] = coralTaper(data, opt);
+%   coralTaper    apply a cosine taper to the data in coral structure
+% USAGE: [data, ierr] = coralTaper(data, opt);
+%
+% Taper the beginning and end of the data with a cosine taper
+% Taper a fraction of the data given by opt.  Default is 0.05
+% to taper 5% off each end
+% See coral for explanation of data structure
+%
+% opt can be either a number: fraction of seismogram to taper
+%     or can be a structure with the field 'taper'
+%     in which case opt.taper is the fraction of seismogram to taper
+%     if opt or opt.taper is negative then taper that number of 
+%     seconds off each each end of the seismogram
+%
+% ierr [Nx1] vector where N is the numer of seismograms
+%      = 0 if no errors
+%      = 1 if no data are available 
+%      = 3 if error in input value of opt
+%
+%  required data fields: data, recLog, recSampInt, recNumData
+%
+% K. Creager  kcc@ess.washington.edu   2/17/2004
+
+ndata = length(data);     % number of seismograms
+ierr  = zeros(ndata,1);
+
+% get taper_fract
+if nargin == 1;
+  taper_fract=.05;
+else
+  if strcmp('struct',class(opt));
+    indx = find( cmpstr('taper',fields(opt)) );
+    if length(indx)>0;  
+      taper_fract = opt.taper; 
+    else
+      disp('Error in second argument of coralTaper')
+      ierr(:) = 3
+      return
+    end
+  elseif strcmp('double',class(opt));
+    taper_fract = opt(1);
+  else
+      disp('Error in second argument of coralTaper')
+      ierr(:) = 3
+      return
+  end
+end
+
+
+for idata = 1 : ndata;             % loop over seismograms
+  temp_data = data(idata).data;    
+  if length(temp_data)>1;
+    if taper_fract>=0;
+      data(idata).data   = taperd(temp_data,taper_fract);
+    else
+      duration = data(idata).recSampInt * data(idata).recNumData;   % duration of data (s)
+      taper  =  -
+    data(idata).recLog = sprintf('%staper %6.4f;',data(idata).recLog,taper_fract);
+  else
+    ierr(idata)=1;
+  end
+end

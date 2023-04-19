@@ -1,0 +1,18 @@
+external:
+
+ikeep
+sum_quality
+filename
+index in list
+station name
+
+internal:
+
+offset times relative to iasp91 predicted (no ellipticity correction)
+distance
+station latitude
+station longitude
+event latitude
+event longitude
+
+

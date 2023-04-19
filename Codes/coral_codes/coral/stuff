@@ -1,0 +1,128 @@
+1c1
+< % function [out_opts, out_matrix, out_phase, out_station, opts] = coral_fun(opts);
+---
+> %function [out_opts, out_matrix, out_phase, out_station, opts] = coral_fun(opts);
+54d53
+< if ~exist('prnt'),            prnt=1;                            end
+123,145d121
+<  elseif abs(opt(1:4))==abs('verb')
+<    % set the level of desired stuff to print to the screen
+<    % >=0 print only error messages
+<    % >=1 (default) give general status information
+<    % >=2 output commands to screen and a file when closing coral
+<    % >=3 debuging information
+<    % 
+<    [smat,n_smat]=cut_string(opt);
+<    if n_smat>3,
+<      disp('verbose must have zero of one argument, try again');
+<    else
+<      if n_smat==1,
+<        prnt=1;
+<      else
+<         [tmp,count,err_msg]=sscanf(smat(2,:),'%f',1);
+<         if length(err_msg)==0; 
+<           prnt=tmp;
+<         else
+<           disp(['second argument of verbose must be a number try again: ' err_msg])
+<         end
+<      end
+<    end
+< 
+211,213c187
+< %       if any(Loc(1,:)==0&Loc(2,:)==0),  % if any station lat and long both equal zero then
+<        if setstr(Station(14:20,1))'=='passcal',  % if any station lat and long both equal zero then
+< 
+---
+>        if upper(setstr(Station(14:20,1))')=='PASSCAL' & Loc(1,1)==0, % if first station is a PASSCAL then fix station info
+659c633
+<        tstart=header(1,:);  % time of first sample in data array
+---
+>        tstart=header(1,:);
+661,663c635
+<        tend=  header(1,:)+header(2,:); % time of last sample in data array
+<        tstart_real=header(1,:)+header(3,:); % time of first real data sample
+<        tend_real  =header(1,:)+header(4,:); % time of last real data sample
+---
+>        tend=tstart+n*sintr;
+665c637
+<        if abs(phases(1:1))>=45 & abs(phases(1:1))<=57, % phases = number (phase velocity)
+---
+>        if abs(phases(1:1)>=45) & abs(phases(1:1)<=57), % phases = number (phase velocity)
+697c669
+<          keep=find(tstart_real(index)<wend & tend_real(index)>wstart);
+---
+>          keep=find(tstart(index)<wend & tend(index)>wstart);
+699,708c671,678
+<          if length(index)>0; % if no data fall into desired go to next phase
+<            time=tim0(index)-tstart(index)+wind_width(1); % time of first data sample relative to desired window
+<            duration=zeros(size(time))+wind_width(2)-wind_width(1); % duration (s)
+<            windows=[time;duration;index];
+<            for i=1:length(time); phase_names=[phase_names;phs_nam]; end
+<            temp=[timmat(index,iph)'; pmat(index,iph)'; ...
+<                  dddpmat(index,iph)'; dtdhmat(index,iph)'];
+<            ray_stuff=[ray_stuff temp]; 
+<            window=[window windows];
+<          end
+---
+>          time=tim0(index)-tstart(index)+wind_width(1);
+>          duration=zeros(1,length(time))+wind_width(2)-wind_width(1);
+>          windows=[time;duration;index];
+>          for i=1:length(time); phase_names=[phase_names;phs_nam]; end
+>          temp=[timmat(index,iph)'; pmat(index,iph)'; ...
+>                dddpmat(index,iph)'; dtdhmat(index,iph)'];
+>          ray_stuff=[ray_stuff temp]; 
+>          window=[window windows];
+715a686
+>          disp('or Type: eval view_no=0; disp_sta_info')
+879,881c850,851
+<        window=window';
+<        if prnt>=2; window, end
+<        wind_save=window;
+---
+>        window=window'
+> 	   wind_save=window;
+1483,1501c1453,1455
+<   if prnt>=2 & ntemp>2,
+<     if exist('coral.cmd')==2, 
+<       !/bin/rm coral.cmd
+<     end
+<     diary coral.cmd
+<     disp(temp)
+<     diary off 
+<   
+<     if exist('dt.m')==2, 
+<       !/bin/rm dt.m
+<     end
+<     temp1=temp(2:ntemp-1,:);ntemp=ntemp-2;
+<     top=['new_opt=[' blanks(mtemp-7)];
+<     bottom=['];' blanks(mtemp)];
+<     quote=setstr(zeros(ntemp,1)+abs(''''));
+<     temp1=[top;[quote temp1 quote];bottom];
+<     diary dt.m
+<     disp(temp1)
+<     diary off 
+---
+> if ntemp>2,
+>   if exist('coral.cmd')==2, 
+>     !/bin/rm coral.cmd
+1503c1457,1459
+< end
+---
+>   diary coral.cmd
+>   disp(temp)
+>   diary off 
+1505c1461,1472
+< 
+---
+>   if exist('dt.m')==2, 
+>     !/bin/rm dt.m
+>   end
+>   temp1=temp(2:ntemp-1,:);ntemp=ntemp-2;
+>   top=['new_opt=[' blanks(mtemp-7)];
+>   bottom=['];' blanks(mtemp)];
+>   quote=setstr(zeros(ntemp,1)+abs(''''));
+>   temp1=[top;[quote temp1 quote];bottom];
+>   diary dt.m
+>   disp(temp1)
+>   diary off 
+> end

@@ -1,0 +1,386 @@
+<html><body>
+<pp>
+	CORAL  2.1     10/14/96
+
+*#GENERAL commands#
+
+*EVAL command
+Evaluate a matlab command.  Examples are:
+eval !more my_script.m    
+eval my_script
+eval setstr(Station(2:5,:))'
+eval size(Data)
+
+*HELP [command_name]
+Help with no argument gives a list of all coral commands.
+Help all prints the whole help file using more.
+Help name gives help for a particular command.
+
+*M    filename
+Execute the commands in the macro in file filename.m  For an example of the 
+format for a macro look at the file 'dt.m' that is output from CORAL after 
+stopping CORAL.
+
+*STOP  
+Exit CORAL.  You can reenter CORAL where you left off.  Files coral.cmd and 
+dt.m are written to disk keeping track of the commands entered (see command M).
+
+*#I/O commands#
+
+*ORIG lat lon depth YYYY MM DD HH MM SS.SS mag
+This lets one change the earthquake origin location and time in data1.
+The data in data1, data2, and data3 are lost.
+
+*QUAK filename
+Read an earthquake catalog.  The READ command chooses an event from this 
+catalog if event information is not present in the AH file.  Catalog is an 
+ascii file containing month, day, year, hour, minute, second, latitude, 
+longitude, depth, and magnitude on each line, separated by spaces.  Filename 
+must not end in '.mat'.
+
+*READ  filename
+Read waveforms from filename into D0; Clear D1, D2, D3.  Data are read from an 
+AH file or from a .mat file that was written using WRIT.  The data must all be 
+from the same earthquake.  If an event location is in the headers, it is used, 
+otherwise an event is chosen from the catalog read in using command QUAK.  QUAK 
+must be called prior to READ.  If more than one earthquake is plausibly 
+associated with the time span of all the data, the user is prompted to choose 
+among the candidate events.  The event location can be changed after READ using
+ORIG.
+
+*SAVE name
+Saves the data in DATA0 and data1 (header1, obs1, etc.) to a matlab file
+named "name.mat".  This can later be read in using the standard MATLAB
+command "load name".
+
+*WRITe  filename
+Write waveforms and headers from D1 into an ah file.
+
+*# CUTTING, SORTING, ALIGNING commands#
+
+*ALIGn max/min/xcor [time-window-start time-window-end]
+This aligns the traces in data1 in the time window set.
+max/min/xcor = 1 --> align the data on the maximum [default]
+max/min/xcor = 2 --> align the data on the minimum
+max/min/xcor = 3 --> xcor the data in the window to a beam
+The entire trace is used when a time window is not set.
+The time window is defined as the time displayed on the plotted traces (s).
+Cross correlation is caluclated with respect to a stack of all waveforms 
+(without normalizing amplitudes).
+
+*CAT  from to
+Concatenate data and headers from one buffer onto another (eg. cat 1 2 replaces 
+D2 with D1 appended to D2) arguments are numbers (1,2, or 3)	
+
+*CUT  from [channel_name]
+Cut from D0 or D1 depending on whether first input parameter is 0 or 1.  
+Calculate predicted travel times and time window for each phase / station pair.
+Determine which seismogram traces from D0 or D1 intersect these phase windows. 
+Cut out desired time series and place in buffer D1. Windows are defined by 
+PHASe and WIDTh. Add phase names to label1, and travel time, ray parameter and 
+dp/dD to header1.  If a second parameters is entered, keep only channel names 
+whose first three characters match those of channel_name.  (D0->D1 or D1->D1)
+
+*COPY from to
+Copy data and headers from one buffer to another (eg. copy 0 2 copies D0->D2)  
+Arguments are numbers (0,1,2, or 3). Second cannot be 0.
+
+*KEEP list_of_station_names
+Keep seismograms works exactly the same as command RM except specified
+seismograms are kept rather than discarded.
+
+*PHASe phase names separated by spaces
+enter desired phase names (default = P).  These are used by CUT.  Phase names 
+must be specific, ie use PKPab, not PKP. (See also TT).  An alternative is to 
+enter phase velocity, time shift, and a set of one or more circuit numbers.  
+eg. 4 0 1 3 5 gives paths R1, R3, R5 at a phase velocity of 4 km/s.  Entering 
+just 4 would default to offset=0, and R1.
+
+*RM  list_of_station_names 
+RM [0,1] [delta,azim,backazim] min max
+RM [0,1] [index] vector
+In top case remove stations from D0; Clear D1, D2, D3.  Station names must be
+capital letters.  If argument is 'noinstr' then remove all stations which
+contain no instrument response information. In bottom cases remove data from
+D0 or D1 as defined by epicentral distance, azimuth or back azimuth (deg), or
+given by a vector of indicies.  In the latter case, the vector must be given
+in brackets with no blank spaces eg: [1:4,8,6] or 3 but not [3 4]. 
+
+*SORT [0,1] key_word
+Sort data in D0 or D1 by delta, azimuth, back_azimuth
+If sorting D0, then (D0->D0; clear D1, D2, D3) otherwise D1-> D1
+
+*WIDTh t1 t2
+t1 and t2 are window times (s) before and after predicted phase arrival , used 
+by CUT.
+
+*XCORrelate ref_phase
+Cross correlate data in D1, calculate differential travel times, and rewindow 
+data in D1.  If no arguments are given, cross correlate all pairs of traces and 
+invert for time offsets that best fit the lag times of each cross correlogram 
+peak. If one argument is given cross correlate trace number 'ref_phase' against 
+the other traces to get the lag time corresponding to the peaks of the cross 
+correlograms. (D1->D1)
+
+*#FILTERING commands#
+
+*DECOnvolve instrument_response [[water_level] a b c d e ...]
+There are currently 2 deco routines the first is called deco the second Deco.
+deco:
+Deconvolve all seismograms in D1 and reconvolve with a standard response.  
+If there are 1 or 2 arguments the first is one of the letters (s, l, i or r) 
+to use the standard DWWSSN short-, long-, or intermediate-period response, 
+or reftek response.  Or if the first argument is a number (n), reconvolve with 
+the response of the nth seismogram in D1.  If there are more than 2 arguments,
+the first is interpreted as a key that defines the new response.  Its only
+possible value is 3, which means reconvolve with a zero phase filter shaped
+by a cos taper from f1 to f2 and from f3 to f4.  The 7 required arguments
+are [3, water_level, gain, f1, f2, f3, f4].  Regardless of the format the third
+argument (if it exists) is always water_level, a parameter used to stabilize 
+the deconvolution (default is 1e-8). Prior to deconvolution data are resampled 
+to a common sample rate.  (D1->D1)
+
+Deco 
+This version of deconvolve uses the key words from, to, wl, gain, gaus, and cos.
+from {i,n} 
+  i means deconvolve the instrument response given in Calib 
+  n means do not deconvolve any response
+to {d,v,a,n,s,l,i,r,#}
+  d,v,a convert counts to displacement (m), velocity (m/s) or acceleration (m/s/s)
+  n       recolvolve  flat response
+  s,l,i,r reconvolve DDWWSSN short-, long- or intermediate period response or
+          reftek response
+  #       reconvolve response chosen from #th data in data1 (# is an integer)
+wl        water level used to stabalize deconvolution
+gain      gain set in addition to those specified in response
+cos  f1,f2,f3,f4 reconvolve wiht a zero phase filter shaped by a cos taper from
+          f1 to f2 and f3 to f4(Hz)
+gaus  f2, f0     reconvolve with a zero phase gaussian filter exp(-([f-f0]^2/f2^2))
+defaults are Deco from i to d wl 1e-6 gain 1 
+possible combinations of commands
+
+from {i|n} to {s|l|r|i|#}
+from i     to {a|v|d}      {cos | gaus}
+from n     to n            {cos | gaus}
+
+gain and wl are options for each case above. Examples:
+Deco from i to v gaus .1 0 wl .0001
+Deco cos .001 .003 .1 .3 wl .0001
+Deco from n to n gaus 1 0
+
+*DEMEan
+Remove mean of data in current buffer. (D1->D1)
+
+*DIFFERENTIATE
+Take time derivative of data in current buffer in the time domain. (D1->D1)
+
+*ENVElope
+Replace the time series in D1 with its envelope function.
+The envelope function is defined here as (f^2 + H(f)^2)^.5 where
+f(t) is the time series and H(f) is the Hilbert transform of f.
+
+*FILTer  cutoffPeriod [order, passOpt, filtOpt]
+Apply a Butterworth filter to data in D1 specified by a cutoffPeriod (s)
+and 3 optional arguments which must be given in the order specified above.
+passOpt is 0: lowpass or bandpass, 1: highpass,           or 2: bandstop
+filtOpt is 0: zero-phase filter  , 1: minimum-phase filter
+defaults are order=8,   passOpt=0,  filtOpt=0
+filter data (D1->D1)
+	
+*HILBert [rec_no phase_shift]
+Apply a frequency independent phase advance of phase_shift degrees to data in 
+D1.  If no arguments given, apply phase shifts when necessary to remove the 
+effects of propagation through the earth for selected phases.  If rec_no=0 
+apply phase shift to all seismograms.  If rec_no>0 apply phase shift to that 
+record only.   Default phase_shift is -90 deg, which corrects the phase for PP, 
+SS, PKPab, etc. (D1->D1). 
+
+*INTEgrate
+Integrate the data in current buffer in the time domain. (D1->D1)
+
+*TAPEr  f
+Apply a cosine taper to data.(eg. taper 0.05 tapers 5% from both sides) (D1->D1)
+
+*TRENd
+Trend removes a linear trend from the data.
+
+*#PLOT, PRINT commands#
+
+*FS  fs_type, [fs_ray_type, fs_scal, fs_cut , fs_angle] 
+Plot times or polarities on a focal sphere
+fs_type	=1 for plotting travel time residuals, =2 for polarity plot, =3 for both
+fs_ray_type =1 for P-waves, =2 for SV waves, 3 for SH waves
+fs_up_down  =1 for down-going waves, 2 for upgoing waves
+fs_scal	    =  ratio of focal sphere size to size of symbol for a 1 s anomaly 
+               (default=25)
+fs_cut      =  saturation level for time residuals (s) (default=5)
+fs_angle    =  take-off angle at edge of focal sphere (default=90 deg)
+
+*GRID
+Add a grid to plot.
+
+*ORIENT page_orientation
+All subsequent plots on the laserwriter will be done using the orientation 
+given here, which must be one of: tall, landscape, or portrait.
+
+*PLOT  buffer_num
+Plot data in buffers 0, 1, 2, or 3. For buffer 1 only you are put in 'pick' 
+mode and can modify the data to fix glitches, flip polarity, or rewindow or 
+discard traces (put cursor in plot window and type h for help)  (D1->D1)
+
+*PRINt [graphics_window]
+With no arguments print seismogram window to default laserwriter.  The only 
+acceptable argument is 'fs' which is used to print the 'Focal Sphere' graphics 
+window.  See also ORIENT.
+
+*SCALe plot_scale 
+Plot_scale equals ratio of the maximum peak-to-peak amplitude to the total plot 
+height. (>0 for true scale, <0 to normalize all traces) (default -.1)
+
+*TITLe plot _title 
+Enter title for PLOT and FS (use 'titl a' for a default title)
+
+*TT  phase names separated by spaces 
+Calculate travel-time curves for phases names given.  Each time TT is called,
+phases are added to the list.  An argument of 'none' clears the array.  An
+argument of 'label on' or 'label off' sets a flag so that subsequent calls to
+PLOT will or will not display phase name labels.  Labels are never displayed
+for depth phases. Times are used only to display travel-time curves using PLOT. 
+See also PHAS. 
+
+*XWINdow w1 w2 [w3]
+If two arguments are entered, they are interpreted as the fractional positions 
+within the graph of the start and stop times of the traces. If three arguments 
+are given,  w1 is the fractional position of the start of the traces to the 
+total display, w2 is the scale (s/cm) after printing.  The third argument is 
+not used.  For long-period data, w2=20 s/cm is a useful scale.  
+(default is .3 1) 
+
+*YAXI option
+Plot record section as a function of distance 'd', or evenly spaced 'e'.  
+Use lower case (e,d) for seismogram ordered with closer ones at bottom
+and upper case for closer seismograms at the top of the page.
+Default='e'.
+
+*FILL option
+Plot seismograms as lines (option='n') or fill seismograms where 
+option has 2 adjacent characters indicating the colors of the fill 
+eg. fill wy
+Default='e'.
+
+*#SPECIAL commands#
+
+*CORRect [file_name]
+Currently reads in the CMT catalog and finds event closest to current event.  
+The nodal lines of the CMT solution are displayed using FS.  If no arguments
+are given then read the MATLAB formatted CMT file containing the complete
+'final' Harvard CMT catalog.  If filename is given read a MATLAB formatted
+version of the catalog if the file ends in .mat.  Otherwise read an ascii
+file containing the CMT in the Harvard 4-line format.  In the future, 
+the CMT will be used to correct the polarity and possibly the amplitude of the 
+waveforms. 
+
+*BEAM
+This creates a beam of the data - a linear straight stack.
+
+*MAPP complexity              { This option has temporarily been turned off }
+This command creates a map showing the source and receivers.  mapp 1 includes
+complexity = 1   --> [default] includes color surface topography
+complexity = 2   --> shows simply ocean boundaries and plates
+
+*STACK root start end interval env scale dec rel
+This command creates a vespegram (slowness vs. time) from the
+trace data.  The defaults options are:
+root  =   3  This is the Nth root robust stacking method (1=linear stack)
+start = -.5
+end   =  .5  These determine the slownesses at which to stack the data.
+int   =  .1
+env   =   0  Envelope = 1 produces envelopes of the stacked data.
+scale =   1  The largest arrival is normalized to this height.
+dec   =   1  Decimate the time in the stack by this amount.
+rel   =   1  If the slownesses should be considered relative to P slownesses.
+
+*VESP env ceiling relative
+This creates a color vespegram to data that has already been stacked (using
+the STAC function).  env = 1 first applies an envelope function to the data,
+ceiling "chops off" all the data above this height, and relative = 1
+plots arrival times and slownesses relative to the P wave.
+
+*Organization:
+D0 consists of Station, Loc, Calib, Comment, Record, Extras, Data, which are 
+read in from an AH file using READ.  These can be changed only by using SORT 
+(to reorder columns) and RM to remove stations. READ, SORT, and RM each clear 
+D1, D2 and D3.  READ also creates Label, Header, and Obs.  Label can be changed 
+at any time without effecting anything else. It is used to label each trace 
+using PLOT.  The READ command removes D0, D1, D2, and D3 before reading in
+new data.  To simultaneously analyze data from two AH files cat them together
+before reading them.  
+
+D1 consists of data1, header1,label1 and obs1.  
+
+header1:
+column 1:	time (s) of first sample relative to event origin time
+column 2:	duration of time series (s)
+column 3:	time (s) of first non-zero sample relative to time of first sample
+column 4:	time (s) of last non-zero sample relative to time of first sample
+column 5:	index from columns of D1 to columns of D0
+column 6:	sample interval (s)
+column 7:	magnification/polarity flip of D1 relative to D0  (D1 = column 7 x D0)
+column 8:	phase shift (deg) 0 for no shift, 90 for Hilbert transform
+column 9:	Predicted travel time (s)
+column 10:	Ray parameter (s/deg)
+column 11:	dp/dD (s/rad^2)
+column 12:	dT/dh (km/s)
+
+obs1:
+column 1:	observed differential travel time (s)
+column 2:	differential travel-time residual (s)
+column 3:	display time offset 
+column 4:	quality of time pick
+column 5:	uncertainty of time pick
+column 6:	observed amplitude
+column 7:	quality of amplitude observation
+column 8:	observed tstar
+
+D2, and D3 have the exact same format as D1.  Nearly all options operate on D1. 
+Use COPY to copy any intermediate results to D2 or D3 and then back to D1.
+
+
+
+
+Travel time curves (see command tt) are stored in array 'Syn' and are 
+calculated for each station in D0.  The index (column 5 of header1) is used to 
+tie waveforms of D1 to the synthetic times in Syn, which is organized by D0.  
+Syn will be deleted whenever D0 changes.
+
+*DESIRED OPTIONS:
+
+1) automatically flip seismograms to correct for polarity {see coral_scripts/ray_syn}
+2) write D1 to AH output file     {done in ascii, could be converted to binary}
+3) write parameters to a data base (decide what to save and how to save it)
+4) sort on D1 as well as D0       {done}
+5) cross correlate subwindows     {done}
+6) Apply differential tstar
+7) Plotting options:
+	a) Add option for more than one seismogram per line
+	b) Plot up-and down-going focal hemispheres on same page
+8) Make history of all operations applied to data
+9) time shift one or a few stations while not moving the rest
+10)realign with cross correlation while imposing a maximum allowed
+   time shift relative to current window
+11)add flexibility in labeling
+
+see ah2ml.man for a description of the header and data storage in matlab for D0.
+
+Notes for merging McSweeney's afids program with coral:
+Numvec.start_Data;Numvec.stop_Data;DataStartDate;DataStartTime;DataSampInt;
+DataTimeOffset;DataScale;DataPhaseShift;DataTstar;ResponseViewPtr_DataResp;
+Numvec.start_DataWin1;Numvec.stop_DataWin1;
+Numvec.start_DataWin2;Numvec.stop_DataWin2;
+Numvec.start_DataWin3;Numvec.stop_DataWin3;
+
+Char_PhaseName;SynTime;SynP;SyndPdD;SyndTdh;
+ObsTime;ObsResid;ObsTimeQual;ObsTimeUnc;ObsAmp;ObsAmpQual;ObsAmpUnc;ObsTstar;ObsTstarUnc;
+*    
+</pp>
+</body></html>

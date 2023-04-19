@@ -1,0 +1,8 @@
+for xx = 1:length(data1(1,:)),
+ junk(xx) = max(abs(data1(:,xx)));
+end
+junk = max(abs(junk))/10;
+noise = rand(size(data1));
+noise = noise -0.5;
+noise = noise*junk;
+data1 = noise + data1;

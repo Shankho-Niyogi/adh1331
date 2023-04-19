@@ -1,0 +1,2 @@
+% to divide the data in data1 by the gain for each station type:
+eval eval(' data1=data1./vec2mat(Calib(2,:)'',length(data1))''; ')

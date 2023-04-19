@@ -1,0 +1,68 @@
+ML STRUCTURE OF SEISMIC DATA IN MATLAB  (9/4/91)
+
+There is a one-to-one mapping of all data in the AH data structures into
+the ML data structures within MATLAB. All header and data information are 
+stored in the columns of seven arrays. For example the fifth seismogram is
+stored in the fifth column of all seven arrays. The first letter of each
+array name is upper case and the following letters are lower case.
+All arrays except Data have a fixed number of rows. 
+
+The Seven ML Arrays 
+
+Station  Character*20   Code*6,Chan*6,Stype*8
+Loc      Real*8         Station Lat, Long, Elev; Event Lat, Long, Depth; 
+                        Origin time(2)
+Calib    Complex*62     A0, DS, Poles*30, Zeros*30
+Comment  Character*362  Event comment*80, Record Comment*80, Log*202
+Record   Real*6         Abstime(2), Ndata, Sintr, Maxamp, Rmin
+Extras   Real*21
+Data     Real*max(Ndata)
+
+
+Station(1:6,:)'    = CODES
+Station(7:12,:)'   = CHANS
+Station(13:20,:)'  = STYPES
+
+Loc(1,:)'          = Station Latitudes (Geographic degrees)
+Loc(2,:)'          = Station Longitudes (Geographic degrees)
+Loc(3,:)'          = Station Elevations (km)
+Loc(4,:)'          = Event Latitudes (Geographic degrees)
+Loc(5,:)'          = Event Longitudes (Geographic degrees)
+Loc(6,:)'          = Event Depths (km)
+Loc(7:8,:)'        = Event Origin time (eg. 1990.0321,140623.0245 means 
+                     3/21/90 14:06:23.0245)
+
+Calib(1,:)         = A0 (real part)
+Calib(2,:)         = DS (real part)
+Calib(3,:)         = number of poles (real part)
+Calib(4,32,:)'     = poles (complex)
+Calib(33,:)'       = number of zeroes (real part)
+Calib(34:62,:)'    = zeroes (complex)
+
+Comment(1:80,:)'   = Event Comment
+Comment(81:160,:)' = Record Comment
+Comment(161:362,:)'= Log
+
+Record(1:2,:)'     = Absolute start time of record (eg. 1990.0321,140623.0245
+                     means 3/21/90 14:06:23.0245)
+Record(3,:)'       = Number of data
+Record(4,:)'       = Sample interval (s)
+Record(5,:)'       = Maximum amplitude of trace
+Record(6,:)'       = offset time (min) for display purposes only
+
+Extras(1:21)'      = extras(0:20)
+
+Data(:,:)'         = data (could be real or complex)
+
+Other convenient data structures that are derived from basic data arrays
+but are subject to change:
+
+Dist(:)'           = epicentral distance (deg, corrected for ellipticity)
+Azim(:)'           = event to station azimuth (deg, clockwize from north)
+Bakaz(:)'          = station to event azimuth (deg, clockwize from north)
+Stime(:)'          = Record start time minus Event origin time (min)
+Sintr(:)'          = Sample interval
+Ttimes(:,:)'       = travel times of various phases (min)
+Phases(:,:)'       = ISC phase codes for times in Ttimes
+
+

@@ -1,0 +1,4 @@
+#csh
+sed -e '1,$s/u0\/iris/local/' coral/coral.m > junk_coral
+cp junk_coral coral/coral.m
+/bin/rm junk_coral

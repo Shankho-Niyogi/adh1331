@@ -1,0 +1,40 @@
+SH at surface and CMB:  Rss=1; Tss=0
+ 
+P-SV reflection/transmissions coefficients to first order in p
+all mixed modes (P->S and S->P conversions should be multiplied by p)
+matricies are ordered as [pp ps ; sp ss]
+ 
+Free surface
+R =
+   -1.0000   12.8000
+    7.0621   -1.0000
+ 
+CMB down
+R =
+    0.0225   14.2022
+    7.5219    1.0000
+T =
+    0.9775         0
+   -7.5219         0
+ 
+ICB up
+R =
+   -0.0554    7.3967
+    2.3504    1.0000
+T =
+    1.0554         0
+   -2.3504         0
+ 
+CMB up
+R =
+   -0.0225
+T =
+    1.0225  -14.8564
+         0         0
+ 
+ICB down
+R =
+    0.0554
+T =
+    0.9446   -6.6206
+         0         0

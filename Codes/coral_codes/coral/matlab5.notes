@@ -1,0 +1,14 @@
+s=struct('data',Data,'station',setstr(Station),'location',Loc, ...
+  'calib',Calib,'comment',Comment,'record',Record,'extras',Extras);
+
+
+s.station(:,1)'
+plot(s.data(:,1))
+
+cal=struct('gain',Calib(1,:), 'A0',Calib(2,:), 'Npoles',Calib(3,:), ...
+    'poles',Calib(4:32,:), 'Nzeros',Calib(33,:), 'zeros',Calib(34:62,:));
+sta=struct('name',setstr(Station(2:6,:)), 'chan',setstr(Station(8:10,:)),...
+     'network',setstr(Station(13:14,:)), 'lat',Loc(1,:), 'lon',Loc(2,:), ...
+     'elev',Loc(3,:), 'calib',cal);
+
+
